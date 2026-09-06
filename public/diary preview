@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>情绪日记 | Prada Scent Prescription</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F7F6F2;
+      --ink: #0D0D0D;
+      --muted: rgba(13,13,13,0.4);
+      --border: rgba(13,13,13,0.07);
+      --card-bg: #ffffff;
+      --detail-bg: #FAFAF8;
+      --serif: Georgia, 'Times New Roman', serif;
+      --sans: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    html { font-family: var(--sans); background: var(--bg); color: var(--ink); }
+    body { min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; outline: none; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── header ── */
+    .site-header {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px;
+      background: rgba(247,246,242,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .site-header a, .site-header span {
+      font-size: 9px; text-transform: uppercase; letter-spacing: .2em;
+      color: var(--muted);
+    }
+    .site-header .title { color: rgba(13,13,13,0.6); }
+
+    /* ── page container ── */
+    .container { max-width: 672px; margin: 0 auto; padding: 32px 16px 80px; }
+
+    /* ── stats panel ── */
+    .stats-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    .stats-panel .panel-label {
+      font-size: 8px; text-transform: uppercase; letter-spacing: .2em;
+      color: rgba(13,13,13,0.35); margin-bottom: 16px;
+    }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+    }
+    @media(max-width:520px){ .stats-grid{ grid-template-columns: repeat(2,1fr); } }
+    .stat-item .stat-sublabel {
+      font-size: 7px; text-transform: uppercase; letter-spacing: .1em;
+      color: rgba(13,13,13,0.35); margin-bottom: 4px;
+    }
+    .stat-item .big-num {
+      font-family: var(--serif); font-size: 26px; line-height: 1;
+    }
+    .stat-item .big-unit { font-size: 8px; color: rgba(13,13,13,0.35); margin-left: 2px; }
+    .dot-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dot-label { font-size: 9px; }
+    .dot-count { font-size: 7px; color: rgba(13,13,13,0.35); }
+
+    /* ── filter bar ── */
+    .filter-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-label { font-size: 7px; text-transform: uppercase; letter-spacing: .1em; color: rgba(13,13,13,0.35); margin-right: 2px; }
+    .filter-btn {
+      font-size: 7px; text-transform: uppercase; letter-spacing: .1em;
+      padding: 4px 8px;
+      border: 1px solid rgba(13,13,13,0.14);
+      background: transparent; color: rgba(13,13,13,0.5);
+      transition: all .2s;
+    }
+    .filter-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .filter-btn:hover:not(.active){ background: rgba(13,13,13,0.04); }
+
+    /* ── prescription card ── */
+    .rx-card { background: var(--card-bg); border: 1px solid var(--border); margin-bottom: 1px; }
+    .rx-head {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 14px 18px;
+      width: 100%; text-align: left; background: transparent; border: none;
+      cursor: pointer;
+    }
+    .rx-head:hover { background: rgba(13,13,13,0.015); }
+
+    /* date col */
+    .rx-date { flex-shrink: 0; width: 48px; display: flex; flex-direction: column; align-items: center; }
+    .rx-index { font-size: 8px; text-transform: uppercase; letter-spacing: .15em; color: rgba(13,13,13,0.28); }
+    .rx-day { font-family: var(--serif); font-size: 17px; line-height: 1.1; color: var(--ink); margin-top: 2px; }
+    .rx-time { font-size: 8px; color: rgba(13,13,13,0.38); }
+
+    /* mid col */
+    .rx-mid { flex: 1; min-width: 0; }
+    .rx-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+    .rx-location { font-size: 10px; }
+    .rx-scene {
+      font-size: 7px; padding: 2px 6px; border-radius: 20px;
+      background: rgba(13,13,13,0.05); color: rgba(13,13,13,0.5);
+    }
+    .rx-emotions { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+    .emotion-tag {
+      font-size: 8px; padding: 2px 6px;
+      background: rgba(13,13,13,0.04); color: var(--ink);
+    }
+    .rx-excerpt {
+      font-size: 10px; line-height: 1.5; color: rgba(13,13,13,0.5);
+      font-style: italic;
+    }
+
+    /* right col */
+    .rx-right { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+    .family-tag {
+      font-size: 7px; padding: 2px 6px;
+      border: 1px solid; /* set inline */
+    }
+    .rx-fragname { font-size: 8px; color: rgba(13,13,13,0.55); text-align: right; max-width: 80px; word-break: break-all; }
+    .conflict-badge { font-size: 7px; color: #C84B4B; }
+    .chevron { font-size: 8px; color: rgba(13,13,13,0.28); transition: transform .2s; margin-top: auto; }
+    .chevron.open { transform: rotate(180deg); }
+
+    /* ── detail panel ── */
+    .rx-detail {
+      border-top: 1px solid rgba(13,13,13,0.06);
+      background: var(--detail-bg);
+      display: none;
+    }
+    .rx-detail.open { display: block; }
+    .rx-detail-full-date {
+      padding: 14px 18px 6px;
+      font-size: 8px; text-transform: uppercase; letter-spacing: .14em;
+      color: rgba(13,13,13,0.3);
+    }
+
+    /* energy rings row */
+    .energy-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 0 18px 14px; }
+    .energy-cell {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 10px 6px 8px;
+      border: 1px solid rgba(13,13,13,0.06); background: #fff;
+    }
+    .energy-cell svg { flex-shrink: 0; }
+    .energy-sublabel {
+      font-size: 7px; text-transform: uppercase; letter-spacing: .1em;
+      color: rgba(13,13,13,0.38); margin-top: 5px;
+    }
+
+    /* conflict bar */
+    .conflict-bar {
+      margin: 0 18px 14px; padding: 8px 12px;
+      font-size: 10px; line-height: 1.5;
+      background: rgba(200,75,75,0.06);
+      border: 1px solid rgba(200,75,75,0.15);
+      color: #C84B4B;
+    }
+
+    /* tri-mapping */
+    .tri-title {
+      padding: 0 18px 8px;
+      font-size: 8px; text-transform: uppercase; letter-spacing: .14em;
+      color: rgba(13,13,13,0.32);
+    }
+    .tri-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 0 18px 14px; }
+    .tri-cell { padding: 8px; border: 1px solid rgba(13,13,13,0.06); background: #fff; }
+    .tri-cell-icon { font-size: 8px; color: rgba(13,13,13,0.38); margin-bottom: 4px; }
+    .tri-cell-label { font-size: 10px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .tri-cell-factors { font-size: 8px; line-height: 1.4; color: rgba(13,13,13,0.44); }
+
+    /* narrative blocks */
+    .narrative-block { padding: 0 18px 14px; }
+    .block-label {
+      font-size: 8px; text-transform: uppercase; letter-spacing: .14em;
+      color: rgba(13,13,13,0.32); margin-bottom: 6px;
+    }
+    .block-text {
+      font-size: 11px; line-height: 1.6; color: rgba(13,13,13,0.68);
+      font-family: var(--serif); font-style: italic;
+    }
+    .block-text.small { font-family: var(--sans); font-style: normal; font-size: 10px; color: rgba(13,13,13,0.55); }
+    .twin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 18px 14px; }
+    @media(max-width:440px){ .twin-grid{ grid-template-columns:1fr; } }
+
+    /* fragrance list */
+    .frag-list { display: flex; flex-direction: column; gap: 6px; padding: 0 18px 14px; }
+    .frag-row {
+      display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px;
+      border: 1px solid rgba(13,13,13,0.06); background: #fff;
+    }
+    .frag-thumb {
+      flex-shrink: 0; width: 32px; height: 42px;
+      background: rgba(13,13,13,0.04); overflow: hidden;
+    }
+    .frag-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .frag-rank { font-size: 7px; color: rgba(13,13,13,0.28); flex-shrink: 0; padding-top: 2px; }
+    .frag-info { flex: 1; min-width: 0; }
+    .frag-name { font-size: 10px; font-weight: 500; color: var(--ink); }
+    .frag-sub { font-size: 8px; color: rgba(13,13,13,0.44); margin-bottom: 3px; }
+    .frag-story {
+      font-size: 8px; line-height: 1.4;
+      color: rgba(13,13,13,0.36);
+      font-family: var(--serif); font-style: italic;
+    }
+    .frag-btn {
+      font-size: 7px; text-transform: uppercase; letter-spacing: .1em;
+      padding: 4px 8px; flex-shrink: 0;
+      border: 1px solid rgba(13,13,13,0.14); color: rgba(13,13,13,0.48);
+      background: transparent;
+    }
+    .frag-btn:hover { background: rgba(13,13,13,0.04); }
+
+    /* CTA row */
+    .cta-row { padding: 0 18px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cta-btn {
+      display: inline-block; padding: 10px 20px;
+      font-size: 8px; text-transform: uppercase; letter-spacing: .15em;
+      background: var(--ink); color: var(--bg);
+      border: none; cursor: pointer; transition: all .25s;
+    }
+    .cta-btn:hover { background: var(--bg); color: var(--ink); outline: 1px solid var(--ink); }
+    .cta-type { font-size: 7px; color: rgba(13,13,13,0.32); }
+
+    /* ── meditation block ── */
+    .meditation-block {
+      padding: 0 18px 14px;
+    }
+
+    /* ── bottom new-entry cta ── */
+    .bottom-cta { text-align: center; margin-top: 36px; }
+    .bottom-cta a {
+      display: inline-block; padding: 12px 32px;
+      font-size: 9px; text-transform: uppercase; letter-spacing: .15em;
+      border: 1px solid rgba(13,13,13,0.18); color: rgba(13,13,13,0.55);
+      transition: all .25s;
+    }
+    .bottom-cta a:hover { background: rgba(13,13,13,0.04); }
+
+    /* record count hint */
+    .filter-count { font-size: 8px; color: rgba(13,13,13,0.32); margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────── -->
+<header class="site-header">
+  <a href="/">← 返回</a>
+  <span class="title">情绪日记</span>
+  <span id="total-count">0 条记录</span>
+</header>
+
+<!-- ── Main ───────────────────────────────────────────────── -->
+<main class="container" id="app">
+  <!-- 加载占位 -->
+  <p style="font-size:9px;text-transform:uppercase;letter-spacing:.2em;color:rgba(13,13,13,0.3);text-align:center;padding:80px 0;">
+    读取香气档案...
+  </p>
+</main>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// 常量 & 映射表
+// ─────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'prada-prescriptions';
+
+const EMOTION_EMOJI   = { happy:'😊', calm:'😌', irritated:'😤', anxious:'😰', sad:'😢', energetic:'⚡', tired:'😴', romantic:'🌹' };
+const EMOTION_LABEL   = { happy:'开心', calm:'平静', irritated:'烦躁', anxious:'焦虑', sad:'悲伤', energetic:'兴奋', tired:'疲惫', romantic:'浪漫' };
+const WEATHER_EMOJI   = { sunny:'☀️', cloudy:'⛅', rainy:'🌧️', snowy:'🌨️', foggy:'🌫️', stormy:'⛈️' };
+const SCENE_LABEL     = { sleep_relax:'睡前放松', deep_work:'深度高效工作', mercury_reversal:'水逆平复', social_boost:'社交提振', commute_subway:'通勤地铁', outdoor_park:'户外公园' };
+const FAMILY_LABEL    = { citrus:'柑橘调', floral:'花香调', woody:'木质调', oriental:'东方调', fresh:'清新调', aromatic:'芳香调', chypre:'西普调', fougere:'馥奇调' };
+const FAMILY_COLOR    = { citrus:'#E8B84B', floral:'#E8A0B4', woody:'#A07850', oriental:'#C07840', fresh:'#5CB8B2', aromatic:'#7A9E6A', chypre:'#8B7355', fougere:'#6A9A6A' };
+const CTA_TYPE_LABEL  = { buy_trial:'购买试香装', buy_full:'购买正装', subscribe:'订阅替换芯', gift_box:'定制礼盒' };
+
+// ─────────────────────────────────────────────────────────────
+// Mock 数据（仿真 localStorage 内容）
+// ─────────────────────────────────────────────────────────────
+const MOCK_PRESCRIPTIONS = [
+  {
+    id: 'rx-1724400000000-a1b2c3',
+    createdAt: '2025-08-23T14:32:00.000Z',
+    request: {
+      environment: { city:'广州', temperature:33, humidity:82, weather:'rainy', lat:23.13, lng:113.26 },
+      user: { emotions:['anxious','irritated'], scene:'deep_work', freeText:'' }
+    },
+    energyDeviation: {
+      score: 78, environmentEnergy: 68, emotionEnergy: 22, sceneEnergy: 60,
+      hasConflict: true,
+      conflictDescription: '高温高湿天气与深度工作需求形成明显张力，情绪能量偏低建议补充清凉调性香氛。'
+    },
+    recommendedFragrances: [
+      {
+        id:'prada-paradoxe', brand:'Prada', name:'Prada Paradoxe', collection:'Paradoxe',
+        family:'floral',
+        notes:{ top:['Neroli','Bergamot'], heart:['Jasmine Sambac','Magnolia'], base:['Vanilla','White Musk','Ambrette'] },
+        story:'矛盾之美，在流动与永恒之间找到平衡。',
+        imageUrl:'/fragrances/prada-paradoxe.jpg', purchaseUrl:'/buy/prada-paradoxe'
+      },
+      {
+        id:'prada-luna-rossa', brand:'Prada', name:'Luna Rossa Ocean', collection:'Luna Rossa',
+        family:'fresh',
+        notes:{ top:['Iris','Petitgrain'], heart:['Sage','Ambrette'], base:['Vetiver','White Musk'] },
+        story:'深蓝海洋的自由气息，一片辽阔。',
+        imageUrl:'/fragrances/luna-rossa-ocean.jpg', purchaseUrl:'/buy/luna-rossa-ocean'
+      },
+      {
+        id:'prada-infusion-diris', brand:'Prada', name:"L'Homme Prada", collection:"L'Homme",
+        family:'aromatic',
+        notes:{ top:['Geranium','Bergamot'], heart:['Iris Root','Neroli'], base:['Vetiver','Patchouli'] },
+        story:'将当代男士的矛盾与精致凝聚于一瓶。',
+        imageUrl:'/fragrances/lhomme.jpg', purchaseUrl:'/buy/lhomme-prada'
+      }
+    ],
+    healingNarrative: {
+      todayStatus: '今天广州的空气像是被蒸汽泡过，33℃的热度让人的思绪也变得粘稠。你想专注，却发现焦虑像一只无形的手在拉扯。这份处方是给此刻的你——先让香气帮你找回呼吸的节奏。',
+      scentCombination: 'Paradoxe 的柑橘前调与茉莉中调层叠展开，用花香的柔软化解燥热，后段香草定锚情绪，帮助你从慌乱重新回到当下。',
+      usageGuide: '建议喷于手腕内侧与颈侧，手腕轻触鼻尖三次做深呼吸。专注工作前先闻五秒，让香气成为进入心流的仪式感开关。',
+      meditationGuide: '闭上眼睛，想象自己站在一片雨后的花园里。空气是湿的，但不沉重，每朵花都在安静地呼吸。你的呼吸随着茉莉的气味慢慢放缓，焦虑像水从指缝流走……',
+      emotionalGuidance: '焦虑不是敌人，它是你在意的证明。把这份在意换个方向，变成专注的燃料——香气已经先帮你铺好了路。',
+      commercialCTA: { label:'探索 Prada Paradoxe', fragranceId:'prada-paradoxe', type:'buy_trial' }
+    },
+    triMapping: {
+      environment: { label:'广州 33℃ 🌧️', energy:68, factors:['温度33℃','湿度82%','阴雨天气'] },
+      emotion:     { label:'焦虑·烦躁', energy:22, factors:['焦虑 😰','烦躁 😤'] },
+      fragrance:   { label:'Prada Paradoxe', energy:35, factors:['花香调','前调: Neroli, Bergamot','基调: Vanilla, White Musk'] }
+    }
+  },
+  {
+    id: 'rx-1724140800000-d4e5f6',
+    createdAt: '2025-08-20T08:15:00.000Z',
+    request: {
+      environment: { city:'上海', temperature:27, humidity:65, weather:'cloudy', lat:31.23, lng:121.47 },
+      user: { emotions:['calm','tired'], scene:'commute_subway', freeText:'' }
+    },
+    energyDeviation: {
+      score: 42, environmentEnergy: 55, emotionEnergy: 45, sceneEnergy: 50,
+      hasConflict: false,
+      conflictDescription: ''
+    },
+    recommendedFragrances: [
+      {
+        id:'prada-candy', brand:'Prada', name:'Prada Candy', collection:'Candy',
+        family:'oriental',
+        notes:{ top:['Benzoin'], heart:['Caramel','Musks'], base:['White Musk','Labdanum'] },
+        story:'如糖果般温柔，甜蜜而不腻，是一份送给自己的礼物。',
+        imageUrl:'/fragrances/prada-candy.jpg', purchaseUrl:'/buy/prada-candy'
+      },
+      {
+        id:'prada-amber-pour-homme', brand:'Prada', name:'Amber Pour Homme', collection:'Amber',
+        family:'aromatic',
+        notes:{ top:['Bergamot','Neroli'], heart:['Patchouli','Labdanum'], base:['Amber','Benzoin','Vetiver'] },
+        story:'东方琥珀的温暖底蕴，在都市节奏里找到从容。',
+        imageUrl:'/fragrances/amber-pour-homme.jpg', purchaseUrl:'/buy/amber-pour-homme'
+      },
+      {
+        id:'prada-les-infusions-iris', brand:'Prada', name:'Les Infusions Iris', collection:'Les Infusions',
+        family:'floral',
+        notes:{ top:['Iris','Violet'], heart:['Powdery Notes'], base:['Benzoin','Vetiver'] },
+        story:'清晨鸢尾的静谧，如一口缓缓呼出的气。',
+        imageUrl:'/fragrances/infusions-iris.jpg', purchaseUrl:'/buy/infusions-iris'
+      }
+    ],
+    healingNarrative: {
+      todayStatus: '27℃的上海微阴，地铁里的人群熟悉而陌生。你平静，但也累了——不是那种睡一觉就好的累，是灵魂需要放空的累。这份香气像一首安静的歌，陪你坐到站。',
+      scentCombination: '东方调的琥珀蜜感在低温车厢里缓缓释放，给疲惫的神经一个温柔的包裹，全程无侵略感，只是陪伴。',
+      usageGuide: '可在出门前喷于外套内衬，香气随体温释放，全程隐约可感。在拥挤车厢里成为你专属的安静气泡。',
+      meditationGuide: '深吸一口气，闻到琥珀的甜，它说：不必加速，你已经够努力了。慢慢呼出，身体沉下去，像一块石头落进温水里……',
+      emotionalGuidance: '疲惫的时候，不必假装精力充沛。承认累，是对自己最诚实的善意。',
+      commercialCTA: { label:'探索 Prada Candy', fragranceId:'prada-candy', type:'buy_full' }
+    },
+    triMapping: {
+      environment: { label:'上海 27℃ ⛅', energy:55, factors:['温度27℃','湿度65%','多云天气'] },
+      emotion:     { label:'平静·疲惫', energy:45, factors:['平静 😌','疲惫 😴'] },
+      fragrance:   { label:'Prada Candy', energy:52, factors:['东方调','前调: Benzoin','基调: White Musk, Labdanum'] }
+    }
+  },
+  {
+    id: 'rx-1723968000000-g7h8i9',
+    createdAt: '2025-08-18T20:44:00.000Z',
+    request: {
+      environment: { city:'北京', temperature:22, humidity:40, weather:'sunny', lat:39.91, lng:116.39 },
+      user: { emotions:['happy','energetic'], scene:'social_boost', freeText:'' }
+    },
+    energyDeviation: {
+      score: 18, environmentEnergy: 72, emotionEnergy: 80, sceneEnergy: 75,
+      hasConflict: false,
+      conflictDescription: ''
+    },
+    recommendedFragrances: [
+      {
+        id:'prada-infusion-mandarine', brand:'Prada', name:'Infusion de Mandarine', collection:'Infusions',
+        family:'citrus',
+        notes:{ top:['Mandarine','Bigarade'], heart:['Orange Blossom'], base:['Benzyl Benzoate','Incense'] },
+        story:'一枚阳光下刚摘的橘，清新得像一句脱口而出的笑声。',
+        imageUrl:'/fragrances/infusion-mandarine.jpg', purchaseUrl:'/buy/infusion-mandarine'
+      },
+      {
+        id:'prada-paradoxe', brand:'Prada', name:'Prada Paradoxe', collection:'Paradoxe',
+        family:'floral',
+        notes:{ top:['Neroli','Bergamot'], heart:['Jasmine Sambac','Magnolia'], base:['Vanilla','White Musk','Ambrette'] },
+        story:'矛盾之美，在流动与永恒之间找到平衡。',
+        imageUrl:'/fragrances/prada-paradoxe.jpg', purchaseUrl:'/buy/prada-paradoxe'
+      },
+      {
+        id:'prada-luna-rossa', brand:'Prada', name:'Luna Rossa Ocean', collection:'Luna Rossa',
+        family:'fresh',
+        notes:{ top:['Iris','Petitgrain'], heart:['Sage','Ambrette'], base:['Vetiver','White Musk'] },
+        story:'深蓝海洋的自由气息，一片辽阔。',
+        imageUrl:'/fragrances/luna-rossa-ocean.jpg', purchaseUrl:'/buy/luna-rossa-ocean'
+      }
+    ],
+    healingNarrative: {
+      todayStatus: '今晚北京秋高气爽，22℃是最适合社交的温度。你心情很好，像一颗充满电的手机，准备好去发光了。让这瓶柑橘调做你今晚的序曲。',
+      scentCombination: '橘皮与橙花的双重柑橘，明亮清爽不抢镜，是会场里最好闻的那个人，又不咄咄逼人。',
+      usageGuide: '出门前喷于衬衫领口两侧，保持社交安全距离内若有若无的清新感。',
+      meditationGuide: '今晚的你不需要冥想，你已经是一束光了。把好的气场带给你遇见的每一个人。',
+      emotionalGuidance: '好的状态是可以传染的。今晚你遇见的人，也会因为你的好心情更快乐一点。',
+      commercialCTA: { label:'探索 Infusion de Mandarine', fragranceId:'prada-infusion-mandarine', type:'buy_trial' }
+    },
+    triMapping: {
+      environment: { label:'北京 22℃ ☀️', energy:72, factors:['温度22℃','湿度40%','晴朗天气'] },
+      emotion:     { label:'开心·兴奋', energy:80, factors:['开心 😊','兴奋 ⚡'] },
+      fragrance:   { label:'Infusion de Mandarine', energy:76, factors:['柑橘调','前调: Mandarine, Bigarade','中调: Orange Blossom'] }
+    }
+  }
+];
+
+// ─────────────────────────────────────────────────────────────
+// 工具函数
+// ─────────────────────────────────────────────────────────────
+function loadPrescriptions() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const list = Array.isArray(parsed) ? parsed : [parsed];
+    return list.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } catch { return null; }
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function fmtFull(iso) {
+  return new Date(iso).toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+}
+function truncate(str, n=55) { return str.length>n ? str.slice(0,n)+'…' : str; }
+
+function topFamilies(list) {
+  const t={};
+  list.forEach(rx => rx.recommendedFragrances.forEach(f => { t[f.family]=(t[f.family]||0)+1; }));
+  return Object.entries(t).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([family,count])=>({family,count}));
+}
+function topEmotions(list) {
+  const t={};
+  list.forEach(rx => rx.request.user.emotions.forEach(e => { t[e]=(t[e]||0)+1; }));
+  return Object.entries(t).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([emotion,count])=>({emotion,count}));
+}
+function avgScore(list) {
+  if(!list.length) return 0;
+  return Math.round(list.reduce((s,rx)=>s+rx.energyDeviation.score,0)/list.length);
+}
+function conflictRate(list) {
+  if(!list.length) return 0;
+  return Math.round(list.filter(rx=>rx.energyDeviation.hasConflict).length/list.length*100);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SVG 能量环
+// ─────────────────────────────────────────────────────────────
+function scoreRingSVG(score) {
+  const r = 22, circ = 2*Math.PI*r;
+  const filled = (score/100)*circ;
+  const color = score>=70 ? '#C84B4B' : score>=40 ? '#E8A44A' : '#8BB87A';
+  return `<svg width="56" height="56" viewBox="0 0 56 56" style="transform:rotate(-90deg)">
+    <circle cx="28" cy="28" r="${r}" fill="none" stroke="rgba(13,13,13,0.08)" stroke-width="3"/>
+    <circle cx="28" cy="28" r="${r}" fill="none" stroke="${color}" stroke-width="3"
+      stroke-dasharray="${filled.toFixed(2)} ${(circ-filled).toFixed(2)}" stroke-linecap="round"/>
+    <g transform="rotate(90 28 28)">
+      <text x="28" y="33" text-anchor="middle" font-size="11" fill="#0D0D0D" font-family="Georgia,serif">${score}</text>
+    </g>
+  </svg>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// HTML 生成
+// ─────────────────────────────────────────────────────────────
+function renderStatsPanel(list) {
+  const avg = avgScore(list);
+  const cRate = conflictRate(list);
+  const families = topFamilies(list);
+  const emotions = topEmotions(list);
+  const scoreColor = avg>=60 ? '#C84B4B' : avg>=35 ? '#E8A44A' : '#8BB87A';
+
+  const famRows = families.map(({family,count}) =>
+    `<div class="dot-row">
+      <span class="dot" style="background:${FAMILY_COLOR[family]}"></span>
+      <span class="dot-label">${FAMILY_LABEL[family]||family}</span>
+      <span class="dot-count">×${count}</span>
+    </div>`).join('');
+
+  const emoRows = emotions.map(({emotion,count}) =>
+    `<div class="dot-row">
+      <span class="dot-label">${EMOTION_EMOJI[emotion]||''} ${EMOTION_LABEL[emotion]||emotion}</span>
+      <span class="dot-count">×${count}</span>
+    </div>`).join('');
+
+  return `
+  <div class="stats-panel">
+    <p class="panel-label">香气人格概览 · ${list.length} 次记录</p>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <p class="stat-sublabel">平均失衡指数</p>
+        <div><span class="big-num" style="color:${scoreColor}">${avg}</span><span class="big-unit">/ 100</span></div>
+      </div>
+      <div class="stat-item">
+        <p class="stat-sublabel">冲突日占比</p>
+        <div><span class="big-num" style="color:${cRate>=50?'#C84B4B':'#0D0D0D'}">${cRate}%</span></div>
+      </div>
+      <div class="stat-item">
+        <p class="stat-sublabel">偏好香调</p>
+        ${famRows}
+      </div>
+      <div class="stat-item">
+        <p class="stat-sublabel">常见情绪</p>
+        ${emoRows}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderFilterBar(usedFamilies, active) {
+  const allBtn = `<button class="filter-btn${active==='all'?' active':''}" onclick="setFilter('all')">全部</button>`;
+  const famBtns = usedFamilies.map(fam => {
+    const isActive = active===fam;
+    const c = FAMILY_COLOR[fam]||'#888';
+    const style = isActive
+      ? `border-color:${c};background:${c}18;color:${c}`
+      : `border-color:rgba(13,13,13,0.12);color:rgba(13,13,13,0.5)`;
+    return `<button class="filter-btn" style="${style}" onclick="setFilter('${fam}')">${FAMILY_LABEL[fam]}</button>`;
+  }).join('');
+  return `<div class="filter-bar">
+    <span class="filter-label">香调筛选</span>
+    ${allBtn}${famBtns}
+  </div>`;
+}
+
+function renderCard(rx, index) {
+  const top = rx.recommendedFragrances[0];
+  const wEmoji = WEATHER_EMOJI[rx.request.environment.weather]||'🌤';
+  const fColor = FAMILY_COLOR[top?.family]||'#888';
+  const cardId = `card-${rx.id}`;
+
+  const emotions = rx.request.user.emotions.map(e =>
+    `<span class="emotion-tag">${EMOTION_EMOJI[e]||''} ${EMOTION_LABEL[e]||e}</span>`
+  ).join('');
+
+  // detail: energy rings
+  const rings = [
+    {label:'环境能量', val:rx.energyDeviation.environmentEnergy},
+    {label:'情绪能量', val:rx.energyDeviation.emotionEnergy},
+    {label:'综合偏离', val:rx.energyDeviation.score},
+  ].map(({label,val}) =>
+    `<div class="energy-cell">${scoreRingSVG(val)}<span class="energy-sublabel">${label}</span></div>`
+  ).join('');
+
+  // conflict bar
+  const conflictBar = rx.energyDeviation.hasConflict && rx.energyDeviation.conflictDescription
+    ? `<div class="conflict-bar">⚡ ${rx.energyDeviation.conflictDescription}</div>`
+    : '';
+
+  // tri mapping
+  const triItems = [
+    {label:'环境', icon: wEmoji, data: rx.triMapping.environment},
+    {label:'情绪', icon:'💫', data: rx.triMapping.emotion},
+    {label:'香氛', icon:'🌿', data: rx.triMapping.fragrance},
+  ].map(({label,icon,data}) =>
+    `<div class="tri-cell">
+      <div class="tri-cell-icon">${icon} ${label}</div>
+      <div class="tri-cell-label">${data.label}</div>
+      <div class="tri-cell-factors">${data.factors.slice(0,3).join(' · ')}</div>
+    </div>`
+  ).join('');
+
+  // fragrance list (with product thumb + story)
+  const frags = rx.recommendedFragrances.map((f,i) =>
+    `<div class="frag-row">
+      ${f.imageUrl ? `<div class="frag-thumb"><img src="${f.imageUrl}" alt="${f.name}" onerror="this.parentElement.style.display='none'"></div>` : ''}
+      <span class="frag-rank">0${i+1}</span>
+      <div class="frag-info">
+        <div class="frag-name">${f.name}</div>
+        <div class="frag-sub">${FAMILY_LABEL[f.family]||f.family} · 前调: ${f.notes.top.slice(0,2).join(', ')}</div>
+        ${f.story ? `<div class="frag-story">${f.story}</div>` : ''}
+      </div>
+      <a href="${f.purchaseUrl}" target="_blank" class="frag-btn">探索</a>
+    </div>`
+  ).join('');
+
+  // find cta fragrance
+  const ctaFrag = rx.recommendedFragrances.find(f=>f.id===rx.healingNarrative.commercialCTA.fragranceId)
+    || rx.recommendedFragrances[0];
+
+  return `
+  <article class="rx-card">
+    <button class="rx-head" onclick="toggleCard('${cardId}')" aria-expanded="false" id="btn-${cardId}">
+      <div class="rx-date">
+        <span class="rx-index">#${String(index+1).padStart(2,'0')}</span>
+        <span class="rx-day">${fmtDate(rx.createdAt)}</span>
+        <span class="rx-time">${fmtTime(rx.createdAt)}</span>
+      </div>
+      <div class="rx-mid">
+        <div class="rx-meta">
+          <span class="rx-location">${wEmoji} ${rx.request.environment.city} ${rx.request.environment.temperature}℃</span>
+          <span class="rx-scene">${SCENE_LABEL[rx.request.user.scene]||rx.request.user.scene}</span>
+        </div>
+        <div class="rx-emotions">${emotions}</div>
+        <p class="rx-excerpt">${truncate(rx.healingNarrative.todayStatus)}</p>
+      </div>
+      <div class="rx-right">
+        ${top ? `<span class="family-tag" style="background:${fColor}22;color:${fColor};border-color:${fColor}44">${FAMILY_LABEL[top.family]||top.family}</span>` : ''}
+        ${top ? `<span class="rx-fragname">${top.name}</span>` : ''}
+        ${rx.energyDeviation.hasConflict ? `<span class="conflict-badge">⚡ 冲突</span>` : ''}
+        <span class="chevron" id="chev-${cardId}">▾</span>
+      </div>
+    </button>
+
+    <div class="rx-detail" id="${cardId}">
+      <p class="rx-detail-full-date">${fmtFull(rx.createdAt)}</p>
+
+      <!-- 能量环 -->
+      <div class="energy-row">${rings}</div>
+
+      <!-- 冲突描述 -->
+      ${conflictBar}
+
+      <!-- 三元映射 -->
+      <p class="tri-title">三元映射</p>
+      <div class="tri-grid">${triItems}</div>
+
+      <!-- 今日状态 -->
+      <div class="narrative-block">
+        <p class="block-label">今日状态</p>
+        <p class="block-text">${rx.healingNarrative.todayStatus}</p>
+      </div>
+
+      <!-- 情绪寄语 -->
+      <div class="narrative-block">
+        <p class="block-label">情绪寄语</p>
+        <p class="block-text">${rx.healingNarrative.emotionalGuidance}</p>
+      </div>
+
+      <!-- 推荐香水 -->
+      <div class="narrative-block" style="padding-bottom:6px">
+        <p class="block-label">推荐香氛</p>
+      </div>
+      <div class="frag-list">${frags}</div>
+
+      <!-- 使用建议 & 香气组合 -->
+      <div class="twin-grid">
+        <div>
+          <p class="block-label" style="padding:0 0 6px">使用建议</p>
+          <p class="block-text small">${rx.healingNarrative.usageGuide}</p>
+        </div>
+        <div>
+          <p class="block-label" style="padding:0 0 6px">香气组合</p>
+          <p class="block-text small">${rx.healingNarrative.scentCombination}</p>
+        </div>
+      </div>
+
+      <!-- 冥想引导 -->
+      <div class="narrative-block">
+        <p class="block-label">冥想引导</p>
+        <p class="block-text">${rx.healingNarrative.meditationGuide}</p>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-row">
+        <a href="${ctaFrag.purchaseUrl}" target="_blank" class="cta-btn">${rx.healingNarrative.commercialCTA.label}</a>
+        <span class="cta-type">${CTA_TYPE_LABEL[rx.healingNarrative.commercialCTA.type]||''}</span>
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderEmpty() {
+  return `
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 0;text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;border:1px solid rgba(13,13,13,0.08);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:24px;">🌿</div>
+    <h2 style="font-family:Georgia,serif;font-size:15px;margin-bottom:10px;color:#0D0D0D;">香气日记尚为空白</h2>
+    <p style="font-size:11px;line-height:1.6;color:rgba(13,13,13,0.45);max-width:240px;">
+      每次获得专属处方后，<br>它会自动保存在这里，成为你的情绪资产。
+    </p>
+    <a href="/" style="margin-top:32px;display:inline-block;padding:12px 32px;font-size:9px;text-transform:uppercase;letter-spacing:.15em;background:#0D0D0D;color:#F7F6F2;">
+      开始第一次处方
+    </a>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 状态 & 渲染
+// ─────────────────────────────────────────────────────────────
+let allPrescriptions = [];
+let currentFilter = 'all';
+
+function render() {
+  const app = document.getElementById('app');
+  const countEl = document.getElementById('total-count');
+  countEl.textContent = `${allPrescriptions.length} 条记录`;
+
+  if (!allPrescriptions.length) {
+    app.innerHTML = renderEmpty();
+    return;
+  }
+
+  const filtered = currentFilter === 'all'
+    ? allPrescriptions
+    : allPrescriptions.filter(rx => rx.recommendedFragrances.some(f => f.family===currentFilter));
+
+  const usedFamilies = [...new Set(allPrescriptions.flatMap(rx => rx.recommendedFragrances.map(f=>f.family)))];
+
+  let html = renderStatsPanel(allPrescriptions);
+  if (usedFamilies.length > 1) {
+    html += renderFilterBar(usedFamilies, currentFilter);
+  }
+  if (currentFilter !== 'all') {
+    html += `<p class="filter-count">显示 ${filtered.length} / ${allPrescriptions.length} 条记录</p>`;
+  }
+  html += filtered.map((rx,i) => renderCard(rx,i)).join('');
+  html += `<div class="bottom-cta"><a href="/">+ 新建今日处方</a></div>`;
+
+  app.innerHTML = html;
+}
+
+window.setFilter = function(fam) {
+  currentFilter = fam;
+  render();
+};
+
+window.toggleCard = function(cardId) {
+  const detail = document.getElementById(cardId);
+  const chev = document.getElementById('chev-'+cardId);
+  const btn = document.getElementById('btn-'+cardId);
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+  btn.setAttribute('aria-expanded', String(!isOpen));
+};
+
+// ─────────────────────────────────────────────────────────────
+// 初始化：优先读真实 localStorage，fallback 到 Mock 数据
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const real = loadPrescriptions();
+  allPrescriptions = real && real.length ? real : MOCK_PRESCRIPTIONS;
+  render();
+});
+</script>
+</body>
+</html>
